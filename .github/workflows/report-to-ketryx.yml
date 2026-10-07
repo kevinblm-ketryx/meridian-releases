@@ -1,0 +1,77 @@
+name: Report release to Ketryx
+
+# When a release manifest is added or changed on main, point the matching Ketryx
+# version at the exact commit of every component listed in it.
+on:
+  push:
+    branches: [main]
+    paths: ['releases/*.toml']
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: Manifest to report, e.g. releases/meridian-2.0.0-26100701.toml
+        required: true
+      ketryx_version_id:
+        description: Ketryx version ID (KXVSN...) to update. Leave empty to match on release_version.
+        required: false
+      dry_run:
+        description: Resolve and print only, write nothing to Ketryx
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One report at a time, in push order, so a later manifest always wins.
+concurrency:
+  group: ketryx-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    env:
+      KETRYX_URL: ${{ vars.KETRYX_URL }}
+      KETRYX_PROJECT_ID: ${{ vars.KETRYX_PROJECT_ID }}
+      KETRYX_API_KEY: ${{ secrets.KETRYX_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests
+
+      - name: Find manifests
+        id: manifests
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_MANIFEST: ${{ inputs.manifest }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            files="$INPUT_MANIFEST"
+          elif git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            files=$(git diff --name-only --diff-filter=AM "$BEFORE" HEAD -- 'releases/*.toml')
+          else
+            files=$(git diff-tree --no-commit-id --name-only -r --diff-filter=AM HEAD -- 'releases/*.toml')
+          fi
+          echo "Manifests: ${files:-none}"
+          { echo 'files<<EOF'; echo "$files"; echo EOF; } >> "$GITHUB_OUTPUT"
+
+      - name: Report to Ketryx
+        if: steps.manifests.outputs.files != ''
+        env:
+          FILES: ${{ steps.manifests.outputs.files }}
+          VERSION_ID: ${{ inputs.ketryx_version_id }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ -n "$VERSION_ID" ]; then args+=(--version-id "$VERSION_ID"); fi
+          if [ "$DRY_RUN" = true ]; then args+=(--dry-run); fi
+          mapfile -t files <<< "$FILES"
+          python scripts/report_to_ketryx.py "${args[@]}" "${files[@]}"
