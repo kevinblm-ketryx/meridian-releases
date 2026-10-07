@@ -1,0 +1,51 @@
+schema_version = "0.0.4"
+release_version = "2.0.0-26100701"
+release_project = "meridian"
+release_type = "RC2"
+
+[components.meridian-os]
+"version.tag" = "v1.177.6"
+"version.sha" = "1ffbb976a34488d85e42110a16fd6c4b59c1d794"
+"version.branch" = "main"
+"last_release.tag" = "v1.176.0"
+"last_release.sha" = "accc0df19203cff8a00d1681e05b811f4eb402b7"
+"last_release.branch" = "main"
+"repository.provider" = "github"
+"repository.org" = "kevinblm-ketryx"
+"repository.name" = "meridian-os"
+code_review_report = true
+release_notes = true
+
+[components.meridian-shared]
+"version.tag" = "v1.51.0"
+"version.sha" = "22227b870a1f1a4073abd7929f9ba513f417a8c6"
+"version.branch" = "main"
+"last_release.tag" = "v1.50.0"
+"last_release.sha" = "64977d011d9a85655684510219427c3b34d8c846"
+"repository.provider" = "github"
+"repository.org" = "kevinblm-ketryx"
+"repository.name" = "meridian-shared"
+subcomponent_of = [ "meridian-os",]
+code_review_report = true
+
+[components.meridian-apps]
+"version.tag" = "v0.366.0"
+"version.sha" = "91d9120fff267b94d69b2ea9127d8a00c8cfb090"
+"version.branch" = "main"
+"last_release.tag" = "v0.365.0"
+"last_release.sha" = "6e78b624255c8fbe08acca8ee206d984c047e11a"
+"repository.provider" = "github"
+"repository.org" = "kevinblm-ketryx"
+"repository.name" = "meridian-apps"
+subcomponent_of = [ "meridian-os",]
+code_review_report = true
+
+[components.fleet-agent]
+"version.tag" = "v1.0.4"
+"version.sha" = "0123456789abcdef0123456789abcdef01234567"
+"version.branch" = "main"
+"repository.provider" = "bitbucket"
+"repository.org" = "meridian-sample"
+"repository.name" = "fleet-agent"
+subcomponent_of = [ "meridian-os",]
+code_review_report = false
